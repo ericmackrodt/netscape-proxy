@@ -3,6 +3,7 @@ package browser
 import (
 	"bytes"
 	"context"
+	"strings"
 
 	// 	"fmt"
 	// 	"io/ioutil"
@@ -63,5 +64,9 @@ func Click(id string, x float64, y float64) {
 }
 
 func TypeText(id string, keys string) {
-	chromedp.Run(ctx, chromedp.KeyEvent(keys))
+	codes := strings.Split(keys, ",")
+
+	for _, i := range codes {
+		chromedp.Run(ctx, chromedp.KeyEvent(i))
+	}
 }
