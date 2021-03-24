@@ -1,0 +1,80 @@
+<html>
+  <head>
+    <title>{{.Title}}</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body BGCOLOR="white" marginwidth="0" leftmargin="0" marginheight="0" hspace="0" style="margin-left:0; margin-right:0; margin-top: 0">
+    <layer z-index=1 top="0" bottom="0" left="0" right="0" vspace="0" hspace="0" width="100%" height="100%">
+      <a href="/click/{{.PageId}}">
+        <img name="display" src="/ss/{{.PageId}}/{{.ImageId}}?img=0" border="0" ismap>
+      </a>
+    </layer>
+  </body>
+  <script>
+    window.captureEvents(Event.KEYPRESS);
+    var keypresses = new Array();
+    
+    window.onkeypress = function (event) {
+      keypresses.push(event.which);
+    }
+
+    var expdate = new Date()
+    cookieExpires = new Date();
+    cookieExpires.setTime (expdate.getTime() + 1 * (24 * 60 * 60 * 1000)) //+1 day
+    var experies = cookieExpires.toGMTString()
+    var cookieName = "resolution";
+    document.cookie = cookieName + "=" + window.innerWidth + "x" + window.innerHeight + "; expires=" + cookieExpires;
+
+    
+    if (document.typeform) {
+      var top = window.innerHeight - document.typeform.document.height;
+      document.typeform.top = top;
+    }
+
+    var imageId = 0;
+
+    function getImageUrl() {
+      var keyPressParam;
+      if (keypresses.length) {
+        keyPressParam = keypresses.join(",")
+        keypresses = new Array();
+      }
+
+      var url = "/ss/{{.PageId}}/{{.ImageId}}?img=" + ++imageId;
+
+
+      if (keyPressParam) {
+        url = url + "&keypresses=" + keyPressParam;
+      }
+
+      return url;
+    }
+
+    var image = new Image();
+    image.onload = function () {
+      if (!document.layers) {
+        var img = document.getElementsByTagName("img");
+        img[0].src = image.src;
+      } else {
+        document.layers[0].document.display.src = image.src;
+      }
+      updateImage();
+    }
+
+    function setImage() {
+      var src = getImageUrl();
+      image.src = src;
+    }
+
+    function updateImage() {
+      if (document.layers) {
+        setTimeout("setImage()", 0);
+      } else {
+        setTimeout(setImage, 0)
+      }
+    }
+
+    updateImage();
+  </script>
+</html>

@@ -1,0 +1,41 @@
+<html>
+  <head>
+    <title></title>
+  </head>
+  <body>
+    <form name="navigatonForm" action="/" method="POST">
+      <label for="url">Url:</label><br>
+      <input type="text" id="url" name="url" value="http://www.google.com"><br><br>
+      <input type="submit" value="Submit">
+    </form>
+  </body>
+  <script>
+
+    // if (navigator.javaEnabled()) {
+    //           var toolKit = java.avt.Toolkit.getDefaultToolkit();
+    //          var screenSize = toolKit.getScreenSize();
+
+    //          alert("Screen width = " + screenSize.width + " pixels.");
+    //          alert("Screen height = " + screenSize.height + " pixels.");
+    //     }
+    var height = window.innerHeight;
+    var width = window.innerWidth;
+
+    if (!height || !width){
+      var toolkit = java.awt.Toolkit.getDefaultToolkit(); 
+      var model = toolkit.getColorModel();
+      var screen_size = toolkit.getScreenSize(); 
+      width = screen_size.width;  
+      height = screen_size.height; 
+      // screensizecolor = model.getPixelSize();
+    }
+
+
+    var expdate = new Date()
+    cookieExpires = new Date();
+    cookieExpires.setTime (expdate.getTime() + 1 * (24 * 60 * 60 * 1000)) //+1 day
+    var experies = cookieExpires.toGMTString()
+    var cookieName = "resolution";
+    document.cookie = cookieName + "=" + width + "x" + height + "; expires=" + cookieExpires;
+  </script>
+</html>
