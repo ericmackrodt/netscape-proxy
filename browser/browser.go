@@ -14,13 +14,20 @@ import (
 
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
+	"github.com/chromedp/chromedp/kb"
 )
 
+func arrangeMap(oldMap map[rune]*kb.Key) map[string]string {
+	newMap := make(map[string]string)
+	for key, value := range oldMap {
+		newMap[value.Key] = string(key)
+	}
+	return newMap
+}
+
 var (
-	ctx context.Context
-	// cancel context.CancelFunc
-	// acancel context.CancelFunc
-	typeQueue []string
+	ctx       context.Context
+	localKeys = arrangeMap(kb.Keys)
 )
 
 func Initialize() context.Context {
@@ -65,8 +72,22 @@ func Click(id string, x float64, y float64) {
 
 func TypeText(id string, keys string) {
 	codes := strings.Split(keys, ",")
-
+	var result string
 	for _, i := range codes {
-		chromedp.Run(ctx, chromedp.KeyEvent(i))
+		if i == "@@nbsp@@" {
+			result = result + localKeys[" "]
+		} else if i == "@@comma@@" {
+			result = result + localKeys[","]
+		} else if i == "@@enter@@" {
+			result = result + localKeys["Enter"]
+		} else if i == "@@backspace@@" {
+			result = result + localKeys["Backspace"]
+		} else {
+			result = result + localKeys[i]
+		}
 	}
+
+	println(result)
+
+	chromedp.Run(ctx, chromedp.KeyEvent(result))
 }

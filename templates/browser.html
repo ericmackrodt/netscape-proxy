@@ -14,9 +14,25 @@
   <script>
     window.captureEvents(Event.KEYPRESS);
     var keypresses = new Array();
-    
-    window.onkeypress = function (event) {
-      keypresses.push(event.which);
+
+    window.onkeypress = function(event) {
+      if (!document.layers) {
+        event.preventDefault();
+      }
+
+      var key = String.fromCharCode(event.which);
+
+      if (event.which === 13) {
+        key = "@@enter@@"
+      } else if (event.which === 8) {
+        key = "@@backspace@@"
+      } else if (event.which === 32) {
+        key = "@@nbsp@@"
+      } else if (event.which === 44) {
+        key = "@@comma@@"
+      }
+
+      keypresses.push(key);
     }
 
     var expdate = new Date()
@@ -41,13 +57,13 @@
         keypresses = new Array();
       }
 
-      var url = "/ss/{{.PageId}}/{{.ImageId}}?img=" + ++imageId;
+      var cacheBuster = (Math.random() * 100).toString().split(".").join("");
 
+      var url = "/ss/{{.PageId}}/" + cacheBuster + "?img=" + ++imageId;
 
       if (keyPressParam) {
         url = url + "&keypresses=" + keyPressParam;
       }
-
       return url;
     }
 

@@ -56,6 +56,17 @@ func getResolution(request *http.Request) (int64, int64) {
 }
 
 func home(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Expires", "Mon, 26 Jul 1997 05:00:00 GMT")
+	// always modified right now
+	// response.Header().Set("Last-Modified",   . gmdate("D, d M Y H:i:s") . " GMT");
+	// HTTP/1.1
+	response.Header().Set(
+		"Cache-Control",
+		"private, no-store, max-age=0, no-cache, must-revalidate, post-check=0, pre-check=0",
+	)
+	// HTTP/1.0
+	response.Header().Set("Pragma", "no-cache")
+
 	if request.Method == "POST" {
 		request.ParseForm()
 		url := request.Form.Get("url")
@@ -75,8 +86,8 @@ func screenshot(response http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	pageId := chi.URLParam(request, "pageId")
 	keypresses := query.Get("keypresses")
-
 	if keypresses != "" {
+		println(keypresses)
 		browser.TypeText(pageId, keypresses)
 	}
 
