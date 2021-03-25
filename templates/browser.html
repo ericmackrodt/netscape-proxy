@@ -12,8 +12,22 @@
     </layer>
   </body>
   <script>
-    window.captureEvents(Event.KEYPRESS);
+    function writeResolutionCookie() {
+      var expdate = new Date()
+      cookieExpires = new Date();
+      cookieExpires.setTime (expdate.getTime() + 1 * (24 * 60 * 60 * 1000)) //+1 day
+      var experies = cookieExpires.toGMTString()
+      var cookieName = "resolution";
+      document.cookie = cookieName + "=" + window.innerWidth + "x" + window.innerHeight + "; expires=" + cookieExpires;
+    }
+
+    window.captureEvents(Event.KEYPRESS, Event.RESIZE);
     var keypresses = new Array();
+
+    window.onresize = function (event) {
+      writeResolutionCookie();
+      window.location.reload();
+    }
 
     window.onkeypress = function(event) {
       if (!document.layers) {
@@ -33,19 +47,6 @@
       }
 
       keypresses.push(key);
-    }
-
-    var expdate = new Date()
-    cookieExpires = new Date();
-    cookieExpires.setTime (expdate.getTime() + 1 * (24 * 60 * 60 * 1000)) //+1 day
-    var experies = cookieExpires.toGMTString()
-    var cookieName = "resolution";
-    document.cookie = cookieName + "=" + window.innerWidth + "x" + window.innerHeight + "; expires=" + cookieExpires;
-
-    
-    if (document.typeform) {
-      var top = window.innerHeight - document.typeform.document.height;
-      document.typeform.top = top;
     }
 
     var imageId = 0;
@@ -92,5 +93,6 @@
     }
 
     updateImage();
+    writeResolutionCookie();
   </script>
 </html>

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	browser "webproxy/browser"
 )
 
 func Render(w http.ResponseWriter, r *http.Request, tpl *template.Template, name string, data interface{}) {
@@ -40,4 +42,9 @@ func GetResolution(request *http.Request) (int64, int64) {
 func GetTemplate(filename string) string {
 	content, _ := ioutil.ReadFile(filename)
 	return string(content)
+}
+
+func Redirect(w http.ResponseWriter, r *http.Request, pageId string) {
+	count := browser.PageCount(pageId)
+	http.Redirect(w, r, "/"+pageId+"/"+strconv.FormatInt(count, 10), http.StatusMovedPermanently)
 }

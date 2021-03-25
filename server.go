@@ -6,11 +6,11 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	browser "webproxy/browser"
 	serverHelpers "webproxy/helpers"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 var (
@@ -46,7 +46,7 @@ func homeRoute(response http.ResponseWriter, request *http.Request) {
 
 		pageId := browser.NewPage(url, width, height)
 
-		http.Redirect(response, request, "/"+pageId+"/"+uuid.New().String(), http.StatusMovedPermanently)
+		serverHelpers.Redirect(response, request, pageId)
 		return
 	}
 
@@ -61,13 +61,36 @@ func screenshotRoute(response http.ResponseWriter, request *http.Request) {
 		browser.TypeText(pageId, keypresses)
 	}
 
-	width, height := serverHelpers.GetResolution(request)
-	data := browser.Screenshot(pageId, width, height)
+	data := browser.Screenshot(pageId)
 	response.Write(data)
 }
 
 func browserRoute(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Expires", "Mon, 26 Jul 1997 05:00:00 GMT")
+	// always modified right now
+	// response.Header().Set("Last-Modified",   . gmdate("D, d M Y H:i:s") . " GMT");
+	// HTTP/1.1
+	response.Header().Set(
+		"Cache-Control",
+		"private, no-store, max-age=0, no-cache, must-revalidate, post-check=0, pre-check=0",
+	)
+	// HTTP/1.0
+	response.Header().Set("Pragma", "no-cache")
+
 	pageId := chi.URLParam(request, "pageId")
+	num := chi.URLParam(request, "num")
+	_, _, _, pageCount := browser.GetPage(pageId)
+	width, height := serverHelpers.GetResolution(request)
+
+	n, _ := strconv.ParseInt(num, 10, 64)
+	if n < pageCount {
+		browser.GoBack(pageId)
+		serverHelpers.Redirect(response, request, pageId)
+		return
+	}
+
+	browser.ResizeBrowser(pageId, width, height)
+
 	data := BrowserPage{PageId: pageId, ImageId: "0", Title: "Something"}
 
 	serverHelpers.Render(response, request, browserTpl, "browser_view", data)
@@ -81,7 +104,7 @@ func clickRoute(response http.ResponseWriter, request *http.Request) {
 
 	browser.Click(pageId, float64(x), float64(y))
 
-	http.Redirect(response, request, "/"+pageId+"/"+uuid.New().String(), http.StatusMovedPermanently)
+	serverHelpers.Redirect(response, request, pageId)
 }
 
 func main() {
