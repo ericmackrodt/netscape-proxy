@@ -3,31 +3,17 @@ package browser
 import (
 	"bytes"
 	"context"
-	"strings"
-
-	// 	"fmt"
-	// 	"io/ioutil"
-
-	// 	"math"
 	"image/jpeg"
 	"image/png"
+	"strings"
 
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
-	"github.com/chromedp/chromedp/kb"
 	"github.com/google/uuid"
 )
 
-func arrangeMap(oldMap map[rune]*kb.Key) map[string]string {
-	newMap := make(map[string]string)
-	for key, value := range oldMap {
-		newMap[value.Key] = string(key)
-	}
-	return newMap
-}
-
 var (
-	localKeys      = arrangeMap(kb.Keys)
+	localKeys      = GetArrangedKeys()
 	browserContext context.Context
 	pages          = make(map[string]*context.Context)
 )

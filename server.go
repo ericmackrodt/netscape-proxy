@@ -1,16 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 	browser "webproxy/browser"
+	serverHelpers "webproxy/helpers"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -29,34 +26,7 @@ type BrowserPage struct {
 	ImageId string
 }
 
-func render(w http.ResponseWriter, r *http.Request, tpl *template.Template, name string, data interface{}) {
-	buf := new(bytes.Buffer)
-	if err := tpl.ExecuteTemplate(buf, name, data); err != nil {
-		fmt.Printf("\nRender Error: %v\n", err)
-		return
-	}
-	w.Write(buf.Bytes())
-}
-
-func getResolution(request *http.Request) (int64, int64) {
-	resolution, _ := request.Cookie("resolution")
-
-	res := strings.Split(resolution.Value, "x")
-
-	var resInt = []int64{}
-
-	for _, i := range res {
-		j, err := strconv.ParseInt(i, 10, 64)
-		if err != nil {
-			panic(err)
-		}
-		resInt = append(resInt, j)
-	}
-
-	return resInt[0], resInt[1]
-}
-
-func home(response http.ResponseWriter, request *http.Request) {
+func homeRoute(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Expires", "Mon, 26 Jul 1997 05:00:00 GMT")
 	// always modified right now
 	// response.Header().Set("Last-Modified",   . gmdate("D, d M Y H:i:s") . " GMT");
@@ -72,7 +42,7 @@ func home(response http.ResponseWriter, request *http.Request) {
 		request.ParseForm()
 		url := request.Form.Get("url")
 
-		width, height := getResolution(request)
+		width, height := serverHelpers.GetResolution(request)
 
 		pageId := browser.NewPage(url, width, height)
 
@@ -80,10 +50,10 @@ func home(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	render(response, request, homeTpl, "homepage_view", nil)
+	serverHelpers.Render(response, request, homeTpl, "homepage_view", nil)
 }
 
-func screenshot(response http.ResponseWriter, request *http.Request) {
+func screenshotRoute(response http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	pageId := chi.URLParam(request, "pageId")
 	keypresses := query.Get("keypresses")
@@ -91,19 +61,19 @@ func screenshot(response http.ResponseWriter, request *http.Request) {
 		browser.TypeText(pageId, keypresses)
 	}
 
-	width, height := getResolution(request)
+	width, height := serverHelpers.GetResolution(request)
 	data := browser.Screenshot(pageId, width, height)
 	response.Write(data)
 }
 
-func browsePage(response http.ResponseWriter, request *http.Request) {
+func browserRoute(response http.ResponseWriter, request *http.Request) {
 	pageId := chi.URLParam(request, "pageId")
 	data := BrowserPage{PageId: pageId, ImageId: "0", Title: "Something"}
 
-	render(response, request, browserTpl, "browser_view", data)
+	serverHelpers.Render(response, request, browserTpl, "browser_view", data)
 }
 
-func click(response http.ResponseWriter, request *http.Request) {
+func clickRoute(response http.ResponseWriter, request *http.Request) {
 	pageId := chi.URLParam(request, "pageId")
 	var x int64
 	var y int64
@@ -114,26 +84,21 @@ func click(response http.ResponseWriter, request *http.Request) {
 	http.Redirect(response, request, "/"+pageId+"/"+uuid.New().String(), http.StatusMovedPermanently)
 }
 
-func getTemplate(filename string) string {
-	content, _ := ioutil.ReadFile(filename)
-	return string(content)
-}
-
 func main() {
 	browser.Initialize()
 
-	homeHTML := getTemplate("templates/home.html")
+	homeHTML := serverHelpers.GetTemplate("templates/home.html")
 	homeTpl = template.Must(template.New("homepage_view").Parse(homeHTML))
 
-	browserHTML := getTemplate("templates/browser.html")
+	browserHTML := serverHelpers.GetTemplate("templates/browser.html")
 	browserTpl = template.Must(template.New("browser_view").Parse(browserHTML))
 
 	router := chi.NewRouter()
 
-	router.Get("/click/{pageId}", click)
-	router.Get("/{pageId}/{num}", browsePage)
-	router.Get("/ss/{pageId}/{imageId}", screenshot)
-	router.HandleFunc("/", home)
+	router.Get("/click/{pageId}", clickRoute)
+	router.Get("/{pageId}/{num}", browserRoute)
+	router.Get("/ss/{pageId}/{imageId}", screenshotRoute)
+	router.HandleFunc("/", homeRoute)
 
 	fmt.Println("Starting Proxy Server")
 
