@@ -13,6 +13,7 @@ import (
 	browser "webproxy/browser"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 var (
@@ -73,9 +74,9 @@ func home(response http.ResponseWriter, request *http.Request) {
 
 		width, height := getResolution(request)
 
-		browser.NewPage(url, width, height)
+		pageId := browser.NewPage(url, width, height)
 
-		http.Redirect(response, request, "/abc/0", http.StatusMovedPermanently)
+		http.Redirect(response, request, "/"+pageId+"/"+uuid.New().String(), http.StatusMovedPermanently)
 		return
 	}
 
@@ -87,12 +88,11 @@ func screenshot(response http.ResponseWriter, request *http.Request) {
 	pageId := chi.URLParam(request, "pageId")
 	keypresses := query.Get("keypresses")
 	if keypresses != "" {
-		println(keypresses)
 		browser.TypeText(pageId, keypresses)
 	}
 
 	width, height := getResolution(request)
-	data := browser.Screenshot(width, height)
+	data := browser.Screenshot(pageId, width, height)
 	response.Write(data)
 }
 
@@ -109,10 +109,9 @@ func click(response http.ResponseWriter, request *http.Request) {
 	var y int64
 	fmt.Sscanf(request.URL.RawQuery, "%d,%d", &x, &y)
 
-	println(x, y)
 	browser.Click(pageId, float64(x), float64(y))
 
-	http.Redirect(response, request, "/abc/0", http.StatusMovedPermanently)
+	http.Redirect(response, request, "/"+pageId+"/"+uuid.New().String(), http.StatusMovedPermanently)
 }
 
 func getTemplate(filename string) string {

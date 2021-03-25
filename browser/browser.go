@@ -15,6 +15,7 @@ import (
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
+	"github.com/google/uuid"
 )
 
 func arrangeMap(oldMap map[rune]*kb.Key) map[string]string {
@@ -26,36 +27,47 @@ func arrangeMap(oldMap map[rune]*kb.Key) map[string]string {
 }
 
 var (
-	ctx       context.Context
-	localKeys = arrangeMap(kb.Keys)
+	localKeys      = arrangeMap(kb.Keys)
+	browserContext context.Context
+	pages          = make(map[string]*context.Context)
 )
 
-func Initialize() context.Context {
+func Initialize() {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", false),
 		chromedp.Flag("hide-scrollbars", false),
 	)
 
-	actx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
-	// defer acancel()
-	ctx, _ = chromedp.NewContext(actx) //, chromedp.WithDebugf(log.Printf))
-	// defer cancel()
-	return ctx
+	browserContext, _ = chromedp.NewExecAllocator(context.Background(), opts...)
 }
 
-func NewPage(url string, width int64, height int64) {
+func NewPage(url string, width int64, height int64) string {
+	id := uuid.New().String()
+
+	ctx, _ := chromedp.NewContext(browserContext) //, chromedp.WithDebugf(log.Printf))
+
+	pages[id] = &ctx
+
 	chromedp.Run(ctx,
 		emulation.SetDeviceMetricsOverride(width, height, 1, false),
 		chromedp.Navigate(url),
 	)
+
+	return id
 }
 
-func Screenshot(width int64, height int64) []byte {
+func GetPage(id string) *context.Context {
+	return pages[id]
+}
+
+func Screenshot(id string, width int64, height int64) []byte {
 	var captureBytes []byte
 
-	chromedp.Run(ctx, emulation.SetDeviceMetricsOverride(width, height, 1, false))
+	page := GetPage(id)
 
-	chromedp.Run(ctx, chromedp.CaptureScreenshot(&captureBytes))
+	chromedp.Run(*page, emulation.SetDeviceMetricsOverride(width, height, 1, false))
+
+	chromedp.Run(*page, chromedp.CaptureScreenshot(&captureBytes))
 
 	raw, _ := png.Decode(bytes.NewReader(captureBytes))
 
@@ -67,7 +79,9 @@ func Screenshot(width int64, height int64) []byte {
 }
 
 func Click(id string, x float64, y float64) {
-	chromedp.Run(ctx, chromedp.MouseClickXY(x, y))
+	page := GetPage(id)
+
+	chromedp.Run(*page, chromedp.MouseClickXY(x, y))
 }
 
 func TypeText(id string, keys string) {
@@ -87,7 +101,7 @@ func TypeText(id string, keys string) {
 		}
 	}
 
-	println(result)
+	page := GetPage(id)
 
-	chromedp.Run(ctx, chromedp.KeyEvent(result))
+	chromedp.Run(*page, chromedp.KeyEvent(result))
 }
